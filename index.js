@@ -1,22 +1,14 @@
 'use strict';
 
-const mkdirp = require('mkdirp-promise');
 const gcs = require('@google-cloud/storage')();
+const mkdirp = require('mkdirp-promise');
 const exec = require('child-process-promise').exec;
 
-exports.convert2grayscale = function convert2grayscale (event) {
-  return convertWithImageMagick(event.data, 'grayscale_image', '-colorspace gray');
-};
+exports.convert2grayscale = (event) => convertWithImageMagick(event.data, 'converted_image', '-colorspace gray');
+exports.convert2negate = (event) => convertWithImageMagick(event.data, 'converted_image', '-negate');
+exports.convert2sepia = (event) => convertWithImageMagick(event.data, 'converted_image', '-sepia-tone 80%');
 
-exports.convert2negate = function convert2negate (event) {
-  return convertWithImageMagick(event.data, 'negate_image', '-negate');
-};
-
-exports.convert2sepia = function convert2sepia (event) {
-  return convertWithImageMagick(event.data, 'sepia_image', '-sepia-tone 80%');
-};
-
-function convertWithImageMagick (object, outBucketName, params) {
+function convertWithImageMagick (object, bucketName, params) {
   if (object.resourceState === 'not_exists') {
     console.log('This is a deletion event.');
     return;
@@ -40,19 +32,19 @@ function convertWithImageMagick (object, outBucketName, params) {
   const tempOriginalFile = `${tempLocalDir}${fileName}`;
   const tempConvertedFile = `${tempFolder}${convertedImageFile}`;
 
-  return mkdirp(tempLocalDir).then(() => {
-    return gcs.bucket(object.bucket).file(filePath).download({
-      destination: tempOriginalFile
-    }).then(() => {
+  return Promise.resolve()
+    .then(() => gcs.bucket(object.bucket).file(filePath).download({destination: tempOriginalFile}))
+    .then(() => {
       console.log('The file has been downloaded to', tempOriginalFile);
-      return exec(`convert "${tempOriginalFile}" ${params} "${tempConvertedFile}"`).then(() => {
-        console.log('Image created at', tempOriginalFile);
-        return gcs.bucket(outBucketName).upload(tempConvertedFile, {
-          destination: convertedImageFile
-        }).then(() => {
-          console.log('Image uploaded to Storage at', filePath);
-        });
-      });
+      return exec(`convert "${tempOriginalFile}" ${params} "${tempConvertedFile}"`);
+    })
+    .then(() => {
+      console.log('Image created at', tempOriginalFile);
+      return gcs.bucket(bucketName).upload(tempConvertedFile, {destination: convertedImageFile});
+    })
+    .then(() => console.log('Image uploaded to Storage at', filePath))
+    .catch((err) => {
+      console.error(err);
+      return err;
     });
-  });
 };
