@@ -17,13 +17,13 @@ exports.convert2sepia = function convert2sepia (event) {
 };
 
 function convertWithImageMagick (object, outBucketName, params) {
-  if (!object.contentType.startsWith('image/')) {
-    console.log('This is not an image.');
+  if (object.resourceState === 'not_exists') {
+    console.log('This is a deletion event.');
     return;
   }
 
-  if (object.resourceState === 'not_exists') {
-    console.log('This is a deletion event.');
+  if (!object.contentType.startsWith('image/')) {
+    console.log('This is not an image.');
     return;
   }
 
