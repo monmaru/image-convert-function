@@ -1,0 +1,17 @@
+{
+  "name": "image-convert-function",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./index.js",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^0.4.0",
+    "child-process-promise": "^2.2.0",
+    "mkdirp": "^0.5.1",
+    "mkdirp-promise": "^5.0.1"
+  }
+}
