@@ -38,9 +38,5 @@ function convertWithImageMagick (object, bucketName, params) {
       console.log('Image created at', tempSrcFile);
       return gcs.bucket(bucketName).upload(tempDestFile, {destination: convImageFile});
     })
-    .then(() => console.log('Image uploaded to Storage at', filePath))
-    .catch((err) => {
-      console.error(err);
-      return err;
-    });
+    .then(() => console.log('Image uploaded to Storage at', filePath));
 };
