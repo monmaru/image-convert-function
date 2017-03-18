@@ -5,11 +5,12 @@ const gcs = require('@google-cloud/storage')();
 const exec = require('child-process-promise').exec;
 const outputBucketName = 'converted_image';
 
-exports.convert2grayscale = (event) => convertWithImageMagick(event.data, outputBucketName, '-colorspace gray');
-exports.convert2negate = (event) => convertWithImageMagick(event.data, outputBucketName, '-negate');
-exports.convert2sepia = (event) => convertWithImageMagick(event.data, outputBucketName, '-sepia-tone 80%');
+exports.convert2grayscale = (event) => convert(event.data, outputBucketName, '-colorspace gray');
+exports.convert2negate = (event) => convert(event.data, outputBucketName, '-negate');
+exports.convert2sepia = (event) => convert(event.data, outputBucketName, '-sepia-tone 80%');
+exports.convert2thumbnail = (event) => convert(event.data, outputBucketName, `-thumbnail 200x200`);
 
-function convertWithImageMagick (object, bucketName, params) {
+function convert (object, bucketName, params) {
   if (object.resourceState === 'not_exists') {
     console.log('This is a deletion event.');
     return;
