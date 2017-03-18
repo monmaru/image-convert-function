@@ -8,7 +8,8 @@ const outputBucketName = 'converted_image';
 exports.convert2grayscale = (event) => convert(event.data, outputBucketName, '-colorspace gray');
 exports.convert2negate = (event) => convert(event.data, outputBucketName, '-negate');
 exports.convert2sepia = (event) => convert(event.data, outputBucketName, '-sepia-tone 80%');
-exports.convert2thumbnail = (event) => convert(event.data, outputBucketName, `-thumbnail 200x200`);
+exports.convert2thumbnail = (event) => convert(event.data, outputBucketName, '-thumbnail 200x200');
+exports.convert2bordercolor = (event) => convert(event.data, outputBucketName, '-bordercolor "#0C00CC" -border 10x10');
 
 function convert (object, bucketName, params) {
   if (object.resourceState === 'not_exists') {
