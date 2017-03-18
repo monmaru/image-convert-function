@@ -1,12 +1,13 @@
 'use strict';
 
+const path = require('path');
 const gcs = require('@google-cloud/storage')();
-const mkdirp = require('mkdirp-promise');
 const exec = require('child-process-promise').exec;
+const outputBucketName = 'converted_image';
 
-exports.convert2grayscale = (event) => convertWithImageMagick(event.data, 'converted_image', '-colorspace gray');
-exports.convert2negate = (event) => convertWithImageMagick(event.data, 'converted_image', '-negate');
-exports.convert2sepia = (event) => convertWithImageMagick(event.data, 'converted_image', '-sepia-tone 80%');
+exports.convert2grayscale = (event) => convertWithImageMagick(event.data, outputBucketName, '-colorspace gray');
+exports.convert2negate = (event) => convertWithImageMagick(event.data, outputBucketName, '-negate');
+exports.convert2sepia = (event) => convertWithImageMagick(event.data, outputBucketName, '-sepia-tone 80%');
 
 function convertWithImageMagick (object, bucketName, params) {
   if (object.resourceState === 'not_exists') {
@@ -20,27 +21,22 @@ function convertWithImageMagick (object, bucketName, params) {
   }
 
   const filePath = object.name;
-  const filePathSplit = filePath.split('/');
-  const fileName = filePathSplit.pop();
-  const fileNameSplit = fileName.split('.');
-  const extension = fileNameSplit.pop();
-  const baseFileName = fileNameSplit.join('.');
-  const fileDir = filePathSplit.join('/') + (filePathSplit.length > 0 ? '/' : '');
-  const convertedImageFile = `${fileDir}${baseFileName}_conv.${extension}`;
-  const tempFolder = '/tmp/';
-  const tempLocalDir = `${tempFolder}${fileDir}`;
-  const tempOriginalFile = `${tempLocalDir}${fileName}`;
-  const tempConvertedFile = `${tempFolder}${convertedImageFile}`;
+  const extension = path.extname(filePath);
+  const baseName = path.basename(filePath, extension);
+  const convImageFile = path.join(path.dirname(filePath), `${baseName}_conv${extension}`);
+  const tempFolder = '/tmp';
+  const tempSrcFile = path.join(tempFolder, filePath);
+  const tempDestFile = path.join(tempFolder, convImageFile);
 
   return Promise.resolve()
-    .then(() => gcs.bucket(object.bucket).file(filePath).download({destination: tempOriginalFile}))
+    .then(() => gcs.bucket(object.bucket).file(filePath).download({destination: tempSrcFile}))
     .then(() => {
-      console.log('The file has been downloaded to', tempOriginalFile);
-      return exec(`convert "${tempOriginalFile}" ${params} "${tempConvertedFile}"`);
+      console.log('The file has been downloaded to', tempSrcFile);
+      return exec(`convert "${tempSrcFile}" ${params} "${tempDestFile}"`);
     })
     .then(() => {
-      console.log('Image created at', tempOriginalFile);
-      return gcs.bucket(bucketName).upload(tempConvertedFile, {destination: convertedImageFile});
+      console.log('Image created at', tempSrcFile);
+      return gcs.bucket(bucketName).upload(tempDestFile, {destination: convImageFile});
     })
     .then(() => console.log('Image uploaded to Storage at', filePath))
     .catch((err) => {
